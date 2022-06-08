@@ -14,7 +14,20 @@ class Item:
     blocked: bool
 
 
+def itemExistTitle(items, o):
+    for i in items:
+        if i.title == o:
+            return True
+    return False
+def itemExistPrice(items, o):
+    for i in items:
+        if i.price == o:
+            return True
+    return False
 class ItemEntity:
+
+
+
     @staticmethod
     def getItems():
 
@@ -23,7 +36,6 @@ class ItemEntity:
 
         for item in data:
             it = Item(
-
                 title=item[1],
                 price=item[2],
                 description=item[3],
@@ -34,5 +46,6 @@ class ItemEntity:
                 blocked=item[8]
             )
             if it not in Items and not it.blocked:
-                Items.append(it)
+                if not itemExistTitle(Items, it.title) and not itemExistPrice(Items, it.price):
+                    Items.append(it)
         return Items

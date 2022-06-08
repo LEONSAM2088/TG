@@ -43,7 +43,7 @@ class DB:
 
     @staticmethod
     def select_one_item(type_item, price, station):
-        sql = f"""SELECT * FROM ITEM WHERE type = '{type_item}' AND metro_station = '{station}' AND price = {price} ORDER BY id LIMIT 1"""
+        sql = f"""SELECT * FROM ITEM WHERE type = '{type_item}' AND metro_station = '{station}' AND price = {price} AND blocked=true ORDER BY id LIMIT 1"""
         cursor = con.cursor()
         cursor.execute(sql)
         records = cursor.fetchone()
@@ -82,6 +82,15 @@ class DB:
             return False
 
     @staticmethod
+    def check_item(price, station):
+
+        try:
+
+            author_ids = con.execute(f"select id from ITEM where blocked=0 and metro_station='{station}' and price={price}").fetchone()[0]
+            return True
+        except:
+            return False
+    @staticmethod
     def check_exist_item(type_item, station, price):
         try:
 
@@ -91,3 +100,24 @@ class DB:
             return True
         except:
             return False
+
+    @staticmethod
+    def reserve_item(price, station):
+        sql = f"UPDATE ITEM SET blocked = 1 where blocked=0 and metro_station='{station}' and price={price}"
+        con.execute(sql)
+        con.commit()
+
+    @staticmethod
+    def unreserve_item(price, station):
+        sql = f"UPDATE ITEM SET blocked = 0 where blocked=1 and metro_station='{station}' and price={price}"
+        con.execute(sql)
+        con.commit()
+
+    @staticmethod
+    def unreserve_any_item():
+        try:
+            sql = f"UPDATE ITEM SET blocked = 0 where blocked=1"
+            con.execute(sql)
+            con.commit()
+        except:
+            print("err")

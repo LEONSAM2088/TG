@@ -38,22 +38,26 @@ async def accept_button(call: CallbackQuery, callback_data: dict, state: FSMCont
         type_item = db[3]
         price_item = db[2]
         station = db[4]
+        try:
+          data_t = DB.select_one_item(type_item, price_item, station)
 
-        data_t = DB.select_one_item(type_item, price_item, station)
+          await bot.send_message(user_id, text=f"""
+          Наименование товара: {data_t[1]} {data_t[6]}гр({data_t[2]} руб.)
+
+          Местонахождение:
+          {data_t[3]}
+
+          Метро: {data_t[5]}""")
+
+          await bot.send_photo(user_id, photo=InputFile(path_or_bytesio=f"photos/{data_t[4]}"))
+          DB.delete_item(price_item)
+          await call.message.answer(f"Заказ №{user_id} закрыт!")
+        except:
+            await call.message.answer("Грустная ошибка")
+
+
+
         DB.delete_order(user_id)
-
-        await bot.send_message(user_id, text=f"""
-Наименование товара: {data_t[1]} {data_t[6]}гр({data_t[2]} руб.)
-
-Местонахождение:
-{data_t[3]}
-
-Метро: {data_t[5]}""")
-
-        await bot.send_photo(user_id, photo=InputFile(path_or_bytesio=f"photos/{data_t[4]}"))
-        DB.delete_item(price_item)
-        await call.message.answer(f"Заказ №{user_id} закрыт!")
-
     else:
         await call.message.answer("Такого заказа нет!")
 
@@ -87,13 +91,15 @@ async def choose_name(message: Message, state: FSMContext):
 @dp.message_handler(state=Item.ItemDescription)
 async def choose_name(message: Message, state: FSMContext):
     await state.update_data(desc=message.text)
-    await message.answer(text="Введите станцию метро")
+    #await message.answer(text="Введите станцию метро")
+
     await Item.next()
+    await choose_name22(message, state)
 
 
 @dp.message_handler(state=Item.ItemStation)
-async def choose_name(message: Message, state: FSMContext):
-    await state.update_data(station=message.text)
+async def choose_name22(message: Message, state: FSMContext):
+    await state.update_data(station="м.Комендантский проспект(Чистое небо)")
     await message.answer(text="Введите вес")
     await Item.next()
 
@@ -109,8 +115,15 @@ async def choose_name(message: Message, state: FSMContext):
 async def opa(message, state):
     await state.update_data(type="item")
     data = await state.get_data()
-
-    DB.insert_item(data.get("title"), data.get("price"), data.get("desc"), data.get("link"), data.get("station"),
-                   data.get("weight"), data.get("type"))
+    price = data.get("price")
+    weight = data.get("weight")
+    try:
+        price = int(price)
+        weight = int(weight)
+        DB.insert_item(data.get("title"), price, data.get("desc"), data.get("link"), data.get("station"),
+                       weight, data.get("type"))
+        message.answer("Товар добавлен")
+    except:
+        message.answer("Введены некорректные данные")
 
     await state.finish()

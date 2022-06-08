@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from random import random
 import re
@@ -9,6 +10,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardBut
 
 from data.admins import Admins
 from data.items import ItemEntity
+from handlers.users import swapper
 from keyboards.inline.callback_data import buy_callback, items_callback, station_callback, admin_callback
 from keyboards.inline.choice_buttons import accepting
 from loader import dp, bot
@@ -62,7 +64,7 @@ async def choose_metro(call: CallbackQuery, callback_data: dict, state: FSMConte
 
     ms = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
 
-        [InlineKeyboardButton(text=x, callback_data=station_callback.new(type='station', title=x))] for x in list_st
+        [InlineKeyboardButton(text=x, callback_data=station_callback.new(type='station', title=""))] for x in list_st
 
     ])
 
@@ -73,11 +75,11 @@ async def choose_metro(call: CallbackQuery, callback_data: dict, state: FSMConte
 
 
 @dp.callback_query_handler(station_callback.filter(type="station"), state=Menu.MetroStation)
-async def pre_order(call: CallbackQuery, callback_data: dict, state: FSMContext):
+async def pre_order(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     ans1 = data.get("item")
 
-    ans2 = callback_data.get("title")
+    ans2 = call.message.reply_markup.inline_keyboard[0][0].text
     await state.update_data(station=ans2)
 
     await call.message.answer(f"""
@@ -90,7 +92,9 @@ async def pre_order(call: CallbackQuery, callback_data: dict, state: FSMContext)
 
 
 @dp.callback_query_handler(buy_callback.filter(category_item_name="Cancel"))
-async def cancel(call: CallbackQuery, callback_data: dict, state: FSMContext):
+async def cancel(call: CallbackQuery, state: FSMContext):
+    if DB.check_exist(call.from_user.id):
+        DB.unreserve_any_item()
     await state.finish()
     await state.reset_state()
     await state.reset_data()
@@ -117,10 +121,13 @@ async def buy(call: CallbackQuery, callback_data: dict, state: FSMContext):
     if DB.check_exist(call.from_user.id):
         await call.message.answer("Предыдущий заказ отменён")
         DB.delete_order(call.from_user.id)
-    if data:
+
+    if data and DB.check_item(data.get("item")[2], data.get("station")):
+        loop = asyncio.get_event_loop()
+        loop.create_task(scheduled(10, state, call, data.get("item")[2], data.get("station")))
 
         ans1 = data.get("item")
-        countdown(15, call.from_user.id)
+
         try:
             mu = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
 
@@ -137,12 +144,24 @@ async def buy(call: CallbackQuery, callback_data: dict, state: FSMContext):
 
         DB.insert_order(call.from_user.id, ans1[2], ans1[1], st)
         order_t = DB.select_order(call.from_user.id)
+
+        DB.reserve_item(data.get("item")[2], data.get("station"))
+
         await call.message.answer(
             text=f"""Заявка на оплату № {10173 + order_t[0]}. Переведите на банковскую карту {ans1[2]} рублей удобным для вас способом. Важно пополнить ровную сумму. {card} ‼️ у вас есть 30 мин на оплату, после чего платёж не будет зачислен ‼️ перевёл неточную сумму - оплатил чужой заказ
                 """)
         await state.finish()
+    else:
+        await state.finish()
+        await call.message.answer("Товар закончился!")
+        await show_items(call.message, state)
 
 
-async def countdown(time_sec, chat_id):
-    time.sleep(time_sec)
-    await bot.send_message(chat_id=chat_id, text="Время вышло")
+async def scheduled(wait_for, state, call, price, station):
+    await asyncio.sleep(wait_for)
+
+    if DB.check_exist(call.from_user.id):
+        await call.message.answer("Время вышло!")
+        data = await state.get_data()
+        DB.unreserve_item(price, station)
+        await cancel(call, state)
