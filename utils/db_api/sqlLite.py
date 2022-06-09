@@ -103,20 +103,30 @@ class DB:
 
     @staticmethod
     def reserve_item(price, station):
-        sql = f"UPDATE ITEM SET blocked = 1 where blocked=0 and metro_station='{station}' and price={price}"
-        con.execute(sql)
+        sql = f"""SELECT * FROM ITEM WHERE metro_station = '{station}' AND price = {price} AND blocked=false ORDER BY id LIMIT 1"""
+        cursor = con.cursor()
+        cursor.execute(sql)
+        records = cursor.fetchone()
+
+        sql2 = f"UPDATE ITEM SET blocked = 1 where id={records[0]}"
+        con.execute(sql2)
         con.commit()
 
     @staticmethod
     def unreserve_item(price, station):
-        sql = f"UPDATE ITEM SET blocked = 0 where blocked=1 and metro_station='{station}' and price={price}"
-        con.execute(sql)
+        sql = f"""SELECT * FROM ITEM WHERE metro_station = '{station}' AND price = {price} AND blocked=true ORDER BY id LIMIT 1"""
+        cursor = con.cursor()
+        cursor.execute(sql)
+        records = cursor.fetchone()
+
+        sql2 = f"UPDATE ITEM SET blocked = 0 where id={records[0]}"
+        con.execute(sql2)
         con.commit()
 
     @staticmethod
     def unreserve_any_item():
         try:
-            sql = f"UPDATE ITEM SET blocked = 0 where blocked=1"
+            sql = f"UPDATE ITEM SET blocked = 0 where blocked=1 "
             con.execute(sql)
             con.commit()
         except:
