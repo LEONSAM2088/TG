@@ -163,5 +163,5 @@ async def scheduled(wait_for, state, call, price, station):
     if DB.check_exist(call.from_user.id):
         await call.message.answer("Время вышло!")
         data = await state.get_data()
-        DB.unreserve_item(price, station)
+        #DB.unreserve_item(price, station)
         await cancel(call, state)

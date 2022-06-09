@@ -46,6 +46,6 @@ class ItemEntity:
                 blocked=item[8]
             )
             if it not in Items and not it.blocked:
-                if not itemExistTitle(Items, it.title) and not itemExistPrice(Items, it.price):
+                if not itemExistTitle(Items, it.title) or not itemExistPrice(Items, it.price):
                     Items.append(it)
         return Items

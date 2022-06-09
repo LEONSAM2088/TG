@@ -119,7 +119,7 @@ async def opa(message, state):
     weight = data.get("weight")
     try:
         price = int(price)
-        weight = int(weight)
+
         DB.insert_item(data.get("title"), price, data.get("desc"), data.get("link"), data.get("station"),
                        weight, data.get("type"))
         await message.answer("Товар добавлен")
