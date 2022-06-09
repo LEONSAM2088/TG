@@ -9,7 +9,7 @@ class Item:
     description: str
     photo_link: str
     metro_station: str
-    weight: int
+    weight: float
     type: str
     blocked: bool
 

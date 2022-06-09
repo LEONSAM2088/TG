@@ -122,8 +122,8 @@ async def opa(message, state):
         weight = int(weight)
         DB.insert_item(data.get("title"), price, data.get("desc"), data.get("link"), data.get("station"),
                        weight, data.get("type"))
-        message.answer("Товар добавлен")
+        await message.answer("Товар добавлен")
     except:
-        message.answer("Введены некорректные данные")
+        await message.answer("Введены некорректные данные")
 
     await state.finish()
