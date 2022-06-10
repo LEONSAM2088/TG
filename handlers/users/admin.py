@@ -39,9 +39,9 @@ async def accept_button(call: CallbackQuery, callback_data: dict, state: FSMCont
         price_item = db[2]
         station = db[4]
         try:
-          data_t = DB.select_one_item(type_item, price_item, station)
+            data_t = DB.select_one_item(type_item, price_item, station)
 
-          await bot.send_message(user_id, text=f"""
+            await bot.send_message(user_id, text=f"""
           Наименование товара: {data_t[1]} {data_t[6]}гр({data_t[2]} руб.)
 
           Местонахождение:
@@ -49,13 +49,12 @@ async def accept_button(call: CallbackQuery, callback_data: dict, state: FSMCont
 
           Метро: {data_t[5]}""")
 
-          await bot.send_photo(user_id, photo=InputFile(path_or_bytesio=f"photos/{data_t[4]}"))
-          DB.delete_item(price_item)
-          await call.message.answer(f"Заказ №{user_id} закрыт!")
-        except:
+            await bot.send_photo(user_id, photo=InputFile(path_or_bytesio=f"photos/{data_t[4]}"))
+            DB.delete_item(price_item, data_t[5])
+            await call.message.answer(f"Заказ №{user_id} закрыт!")
+        except Exception as exc:
+            print(exc)
             await call.message.answer("Грустная ошибка")
-
-
 
         DB.delete_order(user_id)
     else:
@@ -91,15 +90,22 @@ async def choose_name(message: Message, state: FSMContext):
 @dp.message_handler(state=Item.ItemDescription)
 async def choose_name(message: Message, state: FSMContext):
     await state.update_data(desc=message.text)
-    #await message.answer(text="Введите станцию метро")
+    await message.answer(text="""Введите станцию метро
+    0 - м.Комендантский проспект(Чистое небо)
+    1 - Ленинский проспект(Юго-Запад)
+    """)
 
     await Item.next()
-    await choose_name22(message, state)
 
 
 @dp.message_handler(state=Item.ItemStation)
 async def choose_name22(message: Message, state: FSMContext):
-    await state.update_data(station="м.Комендантский проспект(Чистое небо)")
+    st = "м.Комендантский проспект(Чистое небо)"
+    if int(message.text) == 0:
+        st = "м.Комендантский проспект(Чистое небо)"
+    if int(message.text) == 1:
+        st = "Ленинский проспект(Юго-Запад)"
+    await state.update_data(station=st)
     await message.answer(text="Введите вес")
     await Item.next()
 

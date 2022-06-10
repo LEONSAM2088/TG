@@ -19,14 +19,27 @@ def itemExistTitle(items, o):
         if i.title == o:
             return True
     return False
+
+
 def itemExistPrice(items, o):
     for i in items:
         if i.price == o:
             return True
     return False
+
+
 class ItemEntity:
 
+    @staticmethod
+    def getMenuItems():
+        data = ItemEntity.getItems()
+        items = []
+        for item in data:
 
+            if not itemExistTitle(items, item.title) or not itemExistPrice(items, item.price):
+                items.append(item)
+
+        return items
 
     @staticmethod
     def getItems():
@@ -46,6 +59,5 @@ class ItemEntity:
                 blocked=item[8]
             )
             if it not in Items and not it.blocked:
-                if not itemExistTitle(Items, it.title) or not itemExistPrice(Items, it.price):
-                    Items.append(it)
+                Items.append(it)
         return Items

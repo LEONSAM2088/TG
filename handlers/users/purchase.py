@@ -20,13 +20,15 @@ from utils.db_api.sqlLite import DB
 
 
 def get_inline_keyboard_items():
+    list_st = ItemEntity.getMenuItems()
+
     return InlineKeyboardMarkup(row_width=0, inline_keyboard=[
         [InlineKeyboardButton(text=f"{x.title} {x.weight}гр({x.price} руб.)",
                               callback_data=items_callback.new(
                                   type=x.type,
                                   FullName=f"{x.title} {x.weight}гр({x.price} руб.)",
                                   price=x.price
-                              ))] for x in ItemEntity.getItems()
+                              ))] for x in list_st
     ])
 
 
@@ -64,7 +66,7 @@ async def choose_metro(call: CallbackQuery, callback_data: dict, state: FSMConte
 
     ms = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
 
-        [InlineKeyboardButton(text=x, callback_data=station_callback.new(type='station', title=""))] for x in list_st
+        [InlineKeyboardButton(text=x, callback_data=station_callback.new(type='station', title=x[0]))] for x in list_st
 
     ])
 
@@ -75,11 +77,14 @@ async def choose_metro(call: CallbackQuery, callback_data: dict, state: FSMConte
 
 
 @dp.callback_query_handler(station_callback.filter(type="station"), state=Menu.MetroStation)
-async def pre_order(call: CallbackQuery, state: FSMContext):
+async def pre_order(call: CallbackQuery, callback_data: dict, state: FSMContext):
     data = await state.get_data()
     ans1 = data.get("item")
-
     ans2 = call.message.reply_markup.inline_keyboard[0][0].text
+
+    for i in call.message.reply_markup.inline_keyboard:
+        if i[0].text[0] == callback_data.get('title'):
+            ans2 = i[0].text
     await state.update_data(station=ans2)
 
     await call.message.answer(f"""

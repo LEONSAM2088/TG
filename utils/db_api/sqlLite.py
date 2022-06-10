@@ -12,8 +12,8 @@ class DB:
         con.commit()
 
     @staticmethod
-    def delete_item(price):
-        sqlSelect = f"select id, photo_link from ITEM where price = '{price}' ORDER BY id LIMIT 1"
+    def delete_item(price, station):
+        sqlSelect = f"select id, photo_link from ITEM where price = '{price}' and metro_station='{station}' ORDER BY id LIMIT 1"
 
         cursor = con.cursor()
         cursor.execute(sqlSelect)
