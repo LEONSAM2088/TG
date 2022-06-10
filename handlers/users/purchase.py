@@ -1,16 +1,11 @@
 import asyncio
 import logging
-from random import random
-import re
-import time
 from aiogram import types
 from aiogram.dispatcher import FSMContext, filters
 from aiogram.dispatcher.filters import Command
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputFile, ContentType
-
 from data.admins import Admins
 from data.items import ItemEntity
-from handlers.users import swapper
 from keyboards.inline.callback_data import buy_callback, items_callback, station_callback, admin_callback
 from keyboards.inline.choice_buttons import accepting
 from loader import dp, bot
@@ -33,7 +28,7 @@ def get_inline_keyboard_items():
 
 
 @dp.message_handler(Command('start'))
-async def show_items(message: types.Message, state: FSMContext):
+async def show_items(message: types.Message):
     await message.answer(f"Привет")
     items2 = get_inline_keyboard_items()
     await message.answer(text="Вот что у нас есть", reply_markup=items2)
@@ -119,7 +114,7 @@ async def cancel(call: CallbackQuery, state: FSMContext):
 
 
 @dp.callback_query_handler(buy_callback.filter(category_item_name="Buy"))
-async def buy(call: CallbackQuery, callback_data: dict, state: FSMContext):
+async def buy(call: CallbackQuery, state: FSMContext):
     card = Admins[0].card
     tg_id = Admins[0].tg_id
     data = await state.get_data()
@@ -129,7 +124,7 @@ async def buy(call: CallbackQuery, callback_data: dict, state: FSMContext):
 
     if data and DB.check_item(data.get("item")[2], data.get("station")):
         loop = asyncio.get_event_loop()
-        loop.create_task(scheduled(10, state, call, data.get("item")[2], data.get("station")))
+        loop.create_task(scheduled(10, state, call))
 
         ans1 = data.get("item")
 
@@ -162,11 +157,10 @@ async def buy(call: CallbackQuery, callback_data: dict, state: FSMContext):
         await show_items(call.message, state)
 
 
-async def scheduled(wait_for, state, call, price, station):
+async def scheduled(wait_for, state, call):
     await asyncio.sleep(wait_for)
 
     if DB.check_exist(call.from_user.id):
         await call.message.answer("Время вышло!")
         data = await state.get_data()
-        #DB.unreserve_item(price, station)
         await cancel(call, state)
