@@ -124,7 +124,7 @@ async def buy(call: CallbackQuery, state: FSMContext):
 
     if data and DB.check_item(data.get("item")[2], data.get("station")):
         loop = asyncio.get_event_loop()
-        loop.create_task(scheduled(10, state, call))
+        loop.create_task(scheduled(1800, state, call))
 
         ans1 = data.get("item")
 
