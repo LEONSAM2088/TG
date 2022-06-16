@@ -10,7 +10,7 @@ class Admin:
 
 Admins = [Admin(
     id=0,
-    card="0000 0000 0000 0000",
+    card="0000 0000 0000 0001",
     tg_id=1497627218
 )]
 
